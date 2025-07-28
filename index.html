@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リアルタイム物体検出</title>
+    <style>
+        /* 基本的なスタイル設定 */
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        /* カメラとキャンバスを重ねるためのコンテナ */
+        .container {
+            position: relative;
+            width: 80vw;
+            max-width: 640px;
+            border: 2px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* カメラ映像 */
+        #video {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* 検出結果を描画するキャンバス */
+        #canvas {
+            position: absolute; /* videoの上に重ねる */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ボタンのスタイル */
+        #startButton {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        #startButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>リアルタイム物体検出 📸</h1>
+
+    <div class="container">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <button id="startButton">カメラを起動</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+    <script>
+        // --- 要素の取得 ---
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startButton = document.getElementById('startButton');
+        const context = canvas.getContext('2d');
+        let model = null; // AIモデルを格納する変数
+
+        // --- メイン処理 ---
+
+        // 1. スタートボタンが押された時の処理
+        startButton.addEventListener('click', async () => {
+            // カメラを起動
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, // 'environment'で背面カメラを優先
+                    audio: false 
+                });
+                video.srcObject = stream;
+                startButton.style.display = 'none'; // ボタンを隠す
+
+                // videoの再生が始まったらAIモデルをロード
+                video.onloadedmetadata = () => {
+                    loadModelAndRun();
+                };
+
+            } catch (err) {
+                console.error("カメラの起動に失敗しました: ", err);
+                alert("カメラを起動できませんでした。ブラウザのカメラ権限を確認してください。");
+            }
+        });
+        
+        // 2. AIモデルをロードして、リアルタイム検出を開始する関数
+        async function loadModelAndRun() {
+            console.log("AIモデルのロードを開始します...");
+            // cocoSsd.load()で学習済みモデルを読み込む
+            model = await cocoSsd.load(); 
+            console.log("AIモデルのロードが完了しました。");
+            
+            // リアルタイム検出ループを開始
+            detectFrame();
+        }
+
+        // 3. リアルタイム検出のループ処理
+        async function detectFrame() {
+            if (!model) return; // モデルがロードされていなければ何もしない
+
+            // videoの現在の映像から物体を検出する
+            const predictions = await model.detect(video);
+            
+            // 描画処理
+            renderPredictions(predictions);
+
+            // 次のフレームで再度この関数を呼び出す (これでループが作られる)
+            requestAnimationFrame(detectFrame);
+        }
+
+        // 4. 検出結果を描画する関数
+        function renderPredictions(predictions) {
+            // canvasのサイズをvideoの表示サイズに合わせる
+            canvas.width = video.clientWidth;
+            canvas.height = video.clientHeight;
+
+            // 前回の描画をクリア
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // console.log(predictions); // 検出結果をコンソールで確認したい場合はこの行を有効化
+
+            // 各検出結果を描画
+            predictions.forEach(prediction => {
+                const [x, y, width, height] = prediction.bbox;
+                const text = `${prediction.class} (${Math.round(prediction.score * 100)}%)`;
+
+                // 枠線のスタイル
+                context.strokeStyle = '#00FFFF'; // 明るい青緑色
+                context.lineWidth = 2;
+                
+                // ラベルの背景のスタイル
+                context.fillStyle = '#00FFFF';
+                const textWidth = context.measureText(text).width;
+                const textHeight = parseInt(context.font, 10); // フォントサイズを取得
+
+                // 枠線を描画
+                context.strokeRect(x, y, width, height);
+                
+                // ラベルの背景を描画
+                context.fillRect(x, y, textWidth + 4, textHeight + 4);
+                
+                // ラベルのテキストを描画
+                context.fillStyle = '#000000'; // テキストは黒
+                context.fillText(text, x, y + textHeight);
+            });
+        }
+
+    </script>
+</body>
+</html>

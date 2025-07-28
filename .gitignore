@@ -1,0 +1,9 @@
+# SSL証明書ファイル
+key.pem
+cert.pem
+
+# 実行ファイル
+mkcert.exe
+
+# VS Code設定フォルダ
+.vscode
