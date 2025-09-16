@@ -49,8 +49,7 @@
   <li>
     <strong>リポジトリをクローンする</strong>
     <br>
-    <em>(注: `YOUR-REPO-NAME` の部分は、ご自身の正しいリポジトリ名に書き換えてください)</em>
-<pre><code>git clone https://github.com/taru104/YOUR-REPO-NAME.git</code></pre>
+<pre><code>git clone https://github.com/taru104/Real-time-Object-Detection-Web-App.git</code></pre>
   </li>
   <li>
     <strong>プロジェクトディレクトリに移動する</strong>
