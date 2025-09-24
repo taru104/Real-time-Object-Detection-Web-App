@@ -68,5 +68,5 @@
 <p style="font-size: 1.1em;">
   ブラウザで <a href="http://localhost:3000">http://localhost:3000</a> を開き、カメラへのアクセスを許可するとアプリケーションが表示されます。
 </p>
-
+<img src="https://github.com/taru104/Real-time-Object-Detection-Web-App/raw/main/Videotogif.gif" alt="デモアニメーション" width="600">
 </div>
